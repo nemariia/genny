@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        section {
+            margin: 2em auto;
+            max-width: 800px;
+            padding: 1em 2em;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.3em;
+            margin-bottom: 1em;
+        }
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+        li {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            background-color: #f1f3f5;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        li strong {
+            font-weight: bold;
+            color: #0056b3;
+        }
+        .docstring {
+            font-style: italic;
+            color: #6c757d;
+        }
+        footer {
+            margin-top: 2em;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        {{ title }}
+    </header>
+
+    <section>
+        {% if classes %}
+        <h2>Classes</h2>
+        <ul>
+            {% for cls in classes %}
+            <li>
+                <strong>{{ cls.name }}</strong>
+                {% if cls.docstring %}
+                <p class="docstring">{{ cls.docstring }}</p>
+                {% endif %}
+                {% if cls.methods %}
+                <ul>
+                    {% for method in cls.methods %}
+                    <li>
+                        <strong>{{ method.name }}</strong>({{ method.parameters | join(', ') }})
+                        {% if method.docstring %}
+                        <p class="docstring">{{ method.docstring }}</p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if functions %}
+        <h2>Functions</h2>
+        <ul>
+            {% for func in functions %}
+            <li>
+                <strong>{{ func.name }}</strong>({{ func.parameters | join(', ') }})
+                {% if func.docstring %}
+                <p class="docstring">{{ func.docstring }}</p>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </section>
+
+    <footer>
+        Documentation generated with Genny © {{ year }}
+    </footer>
+</body>
+</html>

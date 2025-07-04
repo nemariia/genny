@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        ul {
+            padding: 0;
+            list-style-type: none;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+
+    {% if imports %}
+    <h2>Imports</h2>
+    <ul>
+        {% for imp in imports %}
+        <li>{{ imp }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if classes %}
+    <h2>Classes</h2>
+    <ul>
+        {% for cls in classes %}
+        <li>
+            <strong>{{ cls.name }}</strong>
+            {% if cls.docstring %}
+            <p>{{ cls.docstring }}</p>
+            {% endif %}
+            {% if cls.methods %}
+            <h3>Methods:</h3>
+            <ul>
+                {% for method in cls.methods %}
+                <li>
+                    {{ method.name }}({{ method.parameters | join(', ') }})
+                    {% if method.docstring %}
+                    - {{ method.docstring }}
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if functions %}
+    <h2>Functions</h2>
+    <ul>
+        {% for func in functions %}
+        <li>{{ func }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>

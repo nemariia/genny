@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genny"
+version = "1.0.0"
+description = "A documentation generation tool with templates and version control"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Mariia Nebesnaia", email = "mariianebesnaia@gmail.com" }]
+dependencies = [
+    "jinja2",
+    "typer",
+    "pyfiglet",
+    "pyyaml"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.6"
+
+[project.scripts]
+genny = "genny.cli:app"
+
+[tool.setuptools.package-data]
+genny = [
+    "settings.json",
+    "templates/*.jinja",
+    "templates/templates_metadata.json"
+]

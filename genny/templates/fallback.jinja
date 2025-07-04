@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+{% macro default_section(title, content) %}
+### {{ title }}
+{% for line in content %}
+- {{ line }}
+{% endfor %}
+{% endmacro %}
+
+# Documentation
+
+{% if imports %}
+{{ default_section("Imports", imports) }}
+{% else %}
+### Imports
+- No imports found.
+{% endif %}
+
+{% if classes %}
+{{ default_section("Classes", classes) }}
+{% else %}
+### Classes
+- No classes found.
+{% endif %}
+
+{% if functions %}
+{{ default_section("Functions", functions) }}
+{% else %}
+### Functions
+- No functions found.
+{% endif %}
+
+{% if variables %}
+{{ default_section("Variables", variables) }}
+{% else %}
+### Variables
+- No variables found.
+{% endif %}
+
+</body>
+</html>
