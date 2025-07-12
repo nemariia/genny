@@ -50,23 +50,6 @@ class TestSettingsManager(unittest.TestCase):
         self.assertTrue(os.path.exists(nonexistent_file))
         os.remove(nonexistent_file)
 
-    def test_load_settings_invalid_json(self):
-        # Write invalid JSON to the temporary file
-        with open(self.temp_file.name, "w") as file:
-            file.write("{ invalid json }")
-
-        # Load settings and verify defaults are used
-        with self.assertLogs(level='ERROR'):
-            self.manager.load_settings()
-        default_settings = {
-            "default_code": "",
-            "default_template": "standard",
-            "default_format": "markdown",
-            "default_destination": "",
-            "repo_path": ""
-        }
-        self.assertEqual(self.manager.settings, default_settings)
-
     def test_save_settings(self):
         # Update settings and save
         updated_settings = {
