@@ -94,7 +94,3 @@ def test_function():
             self.docgen.export_docs("unsupported", "output.txt")
 
         self.assertEqual(str(context.exception), "Unsupported format: unsupported")
-
-
-if __name__ == "__main__":
-    unittest.main()

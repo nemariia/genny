@@ -52,7 +52,3 @@ class TestFileSystem(unittest.TestCase):
         read_data = self.file_system.read_file(file_path)
         
         self.assertEqual(read_data, data)
-
-
-if __name__ == "__main__":
-    unittest.main()

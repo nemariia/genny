@@ -100,7 +100,3 @@ class TestClass:
             "Method docstring."
         ]
         self.assertEqual(docstrings, expected)
-
-
-if __name__ == "__main__":
-    unittest.main()

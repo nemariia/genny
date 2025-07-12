@@ -123,7 +123,3 @@ class TestTemplater(unittest.TestCase):
             self.templater.delete_template(template_name)
 
         self.assertEqual(str(context.exception), f"Template '{template_name}' not found.")
-
-
-if __name__ == "__main__":
-    unittest.main()

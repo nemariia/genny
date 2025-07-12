@@ -47,7 +47,3 @@ class TestVersionControl(unittest.TestCase):
         # Test retrieving commit history
         history = self.vc.get_commit_history()
         self.assertTrue(len(history) > 0)
-
-
-if __name__ == '__main__':
-    unittest.main()

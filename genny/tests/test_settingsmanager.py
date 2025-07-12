@@ -90,8 +90,3 @@ class TestSettingsManager(unittest.TestCase):
         with self.assertLogs(level='INFO') as log:
             self.manager.update_setting("nonexistent_key", "value")
         self.assertIn("Invalid setting: nonexistent_key", log.output[0])
-
-
-
-if __name__ == "__main__":
-    unittest.main()

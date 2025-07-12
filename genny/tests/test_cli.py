@@ -88,6 +88,3 @@ class TestCLIUseCases(unittest.TestCase):
             self.assertEqual(result.exit_code, 0)
             self.assertIn("template1", result.stdout)
             self.assertIn("template2", result.stdout)
-
-if __name__ == "__main__":
-    unittest.main()

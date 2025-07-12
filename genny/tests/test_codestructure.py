@@ -75,7 +75,3 @@ class TestCodeStructure(unittest.TestCase):
 
         # Validate the output
         self.assertEqual(result, expected)
-
-        
-if __name__ == "__main__":
-    unittest.main()
