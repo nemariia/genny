@@ -54,18 +54,17 @@ def gen(code_file: str = typer.Option(None, help="Path to the code file"),
         dg.generate_docs(code_file, template)
         if destination:
             dg.export_docs(output_format, destination)
+            print(f"Generated successfully at {destination}")
+            repo = settings_manager.settings.get("repo_path")
+            if repo:
+                vc = VersionControl(repo)
+                vc.commit_changes("committed via CLI")
+                print(f"Changes committed to {repo}")
         else:
             typer.echo("No destination provided. The documentation will be printed here:")
             typer.echo(dg.generated_docs)
     except Exception as e:
         typer.echo(f"An error occurred: {str(e)}", err=True)
-
-    print(f"Generated successfully at {destination}")
-    repo = settings_manager.settings.get("repo_path")
-    if repo:
-        vc = VersionControl(repo)
-        vc.commit_changes("committed via CLI")
-        print(f"Changes committed to {repo}")
 
 
 @app.command()
