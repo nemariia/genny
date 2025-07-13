@@ -197,8 +197,10 @@ class CodeParser:
         return None
 
     def _get_value(self, node):
-        if isinstance(node, ast.Constant):
-            return node.value
+        if node is None:
+            return "None"
+        elif isinstance(node, ast.Constant):
+            return repr(node.value)
         elif isinstance(node, ast.Name):
             return node.id
         return str(ast.dump(node))
