@@ -248,7 +248,3 @@ def edit_settings():
         typer.echo(f"Updated '{key}' to '{value}' in settings.json.")
     except Exception as e:
         typer.echo(f"An error occurred: {str(e)}")
-
-
-if __name__ == "__main__":
-    app.command()(gen)
