@@ -189,3 +189,25 @@ class TestClass:
         node = self.extract_func_node("def f(): pass")
         result = self.parser.return_types(node)
         self.assertEqual(result, "Returns None")
+
+    def test_get_name_attribute(self):
+        code = "obj.attr"
+        expr = ast.parse(code, mode='eval').body
+        result = self.parser._get_name(expr)
+        self.assertEqual(result, "obj.attr")
+
+    def test_get_name_other_node(self):
+        node = ast.parse("42", mode='eval').body
+        result = self.parser._get_name(node)
+        self.assertIsNone(result)
+
+    def test_get_value_name_node(self):
+        node = ast.parse("x = y").body[0].value
+        result = self.parser._get_value(node)
+        self.assertEqual(result, "y")
+
+    def test_get_value_other_node_ast_dump(self):
+        node = ast.parse("x = 1 + 2").body[0].value
+        result = self.parser._get_value(node)
+        self.assertTrue(result.startswith("BinOp("))
+        self.assertIn("left=Constant(value=1", result)
