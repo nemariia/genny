@@ -8,6 +8,7 @@ class TestCodeParser(unittest.TestCase):
     def setUp(self):
         self.mock_file_system = MagicMock()
         self.parser = CodeParser(self.mock_file_system)
+        self.cs = CodeStructure()
 
     def test_parse_code(self):
         sample_code = """
@@ -100,3 +101,27 @@ class TestClass:
             "Method docstring."
         ]
         self.assertEqual(docstrings, expected)
+
+    def test_tuple_with_alias(self):
+        imports = [("os", "oslib"), ("sys", "")]
+        expected = ["os as oslib", "sys"]
+        result = self.cs.format_imports(imports)
+        self.assertEqual(result, expected)
+
+    def test_strings_only(self):
+        imports = ["math", "random"]
+        expected = ["math", "random"]
+        result = self.cs.format_imports(imports)
+        self.assertEqual(result, expected)
+
+    def test_malformed_items(self):
+        imports = [{"key": "value"}, 123, None]
+        expected = ["Invalid import format", "Invalid import format", "Invalid import format"]
+        result = self.cs.format_imports(imports)
+        self.assertEqual(result, expected)
+
+    def test_mixed_inputs(self):
+        imports = [("json", "js"), "datetime", 42, ("os", "")]
+        expected = ["json as js", "datetime", "Invalid import format", "os"]
+        result = self.cs.format_imports(imports)
+        self.assertEqual(result, expected)
