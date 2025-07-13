@@ -125,3 +125,28 @@ class TestClass:
         expected = ["json as js", "datetime", "Invalid import format", "os"]
         result = self.cs.format_imports(imports)
         self.assertEqual(result, expected)
+
+    def parse_class(self, class_src):
+        tree = ast.parse(class_src)
+        class_node = next(n for n in tree.body if isinstance(n, ast.ClassDef))
+        return self.parser.get_class_details(class_node)
+
+    def test_simple_assign(self):
+        result = self.parse_class("class A:\n    x = 123")
+        self.assertIn({'name': 'x', 'value': '123'}, result['attributes'])
+
+    def test_annassign_with_value(self):
+        result = self.parse_class("class A:\n    x: int = 123")
+        self.assertIn({'name': 'x', 'value': '123'}, result['attributes'])
+
+    def test_annassign_without_value(self):
+        result = self.parse_class("class A:\n    x: int")
+        self.assertIn({'name': 'x', 'value': 'None'}, result['attributes'])
+
+    def test_multiple_targets(self):
+        result = self.parse_class("class A:\n    x, y = 1, 2")
+        self.assertEqual(result['attributes'], [])  # Should skip tuple unpacking
+
+    def test_non_name_target(self):
+        result = self.parse_class("class A:\n    [x] = [1]")
+        self.assertEqual(result['attributes'], [])  # [x] is a List node, not Name
