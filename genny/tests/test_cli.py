@@ -262,3 +262,37 @@ class TestCLIUseCases(unittest.TestCase):
             result = runner.invoke(app, ["checkout-branch", "--b", "dev"])
             self.assertEqual(result.exit_code, 0)
             self.assertIn("Repository path not set. Use the 'add_repo' command to set it.", result.stdout)
+
+    def test_edit_settings_success(self):
+        fake_settings = {"default_template": "standard"}
+        input_sequence = ["default_template", "compact"]
+
+        with patch("genny.cli.open", mock_open(read_data=json.dumps(fake_settings)), create=True) as m, \
+             patch("genny.cli.typer.prompt", side_effect=input_sequence), \
+             patch("genny.cli.typer.echo") as mock_echo, \
+             patch("json.dump") as mock_dump:
+
+            result = runner.invoke(app, ["edit-settings"])
+            self.assertEqual(result.exit_code, 0)
+            mock_dump.assert_called_once()
+            self.assertTrue(any("Updated 'default_template' to 'compact'" in str(c[0][0]) for c in mock_echo.call_args_list))
+
+    def test_edit_settings_invalid_key(self):
+        fake_settings = {"default_template": "standard"}
+        input_sequence = ["invalid_key"]
+
+        with patch("genny.cli.open", mock_open(read_data=json.dumps(fake_settings)), create=True), \
+             patch("genny.cli.typer.prompt", side_effect=input_sequence), \
+             patch("genny.cli.typer.echo") as mock_echo:
+
+            result = runner.invoke(app, ["edit-settings"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(any("is not a valid setting key" in str(c[0][0]) for c in mock_echo.call_args_list))
+
+    def test_edit_settings_file_error(self):
+        with patch("genny.cli.open", side_effect=OSError("boom"), create=True), \
+             patch("genny.cli.typer.echo") as mock_echo:
+
+            result = runner.invoke(app, ["edit-settings"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(any("An error occurred: boom" in str(c[0][0]) for c in mock_echo.call_args_list))
