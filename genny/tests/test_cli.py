@@ -82,9 +82,51 @@ class TestCLIUseCases(unittest.TestCase):
             self.assertIn("The documentation will be printed here", result.stdout)
             self.assertIn("test.py", result.stdout)
 
+    def test_generate_docs_exception_handled(self):
+        with patch("genny.cli.Docgen") as MockDocgen, \
+         patch("genny.cli.settings", {
+             "default_code": "main.py",
+             "default_template": "standard",
+             "default_format": "json",
+             "default_destination": "docs.md"
+         }), \
+         patch("genny.cli.pyfiglet.figlet_format", return_value="FIGLET"), \
+         patch("genny.cli.settings_manager.settings", {}):  # ensure no repo commits
+
+            instance = MockDocgen.return_value
+            instance.generate_docs.side_effect = RuntimeError("crash inside generate_docs")
+
+            result = runner.invoke(app, ["gen"])
+
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("An error occurred: crash inside generate_docs", result.stderr)
+
     def test_list_templates_success(self):
         with patch("genny.templater.Templater.list_templates", return_value=["template1", "template2"]):
             result = runner.invoke(app, ["list-templates"])
             self.assertEqual(result.exit_code, 0)
             self.assertIn("template1", result.stdout)
             self.assertIn("template2", result.stdout)
+
+    def test_delete_template_success(self):
+        with patch("genny.templater.Templater.delete_template", return_value=None):
+            result = runner.invoke(app, ["delete-template", "template1"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("deleted successfully", result.stdout)
+
+    def test_delete_template_not_found(self):
+        with patch("genny.templater.Templater.delete_template", side_effect=ValueError("Template not found")):
+            result = runner.invoke(app, ["delete-template", "missing_template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Error: Template not found", result.stdout)
+
+    def test_delete_template_unexpected_error(self):
+        with patch("genny.templater.Templater.delete_template", side_effect=RuntimeError("internal failure")):
+            result = runner.invoke(app, ["delete-template", "template1"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("An unexpected error occurred: internal failure", result.stdout)
+
+    def test_delete_template_missing_argument(self):
+        result = runner.invoke(app, ["delete-template"])
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("Missing argument 'TEMPLATE'", result.stderr)
