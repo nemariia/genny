@@ -2,6 +2,7 @@ import unittest
 import os
 import json
 import tempfile
+from unittest.mock import patch, MagicMock
 from genny.settingsmanager import SettingsManager
 
 
@@ -84,6 +85,15 @@ class TestSettingsManager(unittest.TestCase):
         }
         self.assertEqual(self.manager.settings, default_settings)
         self.assertIn("Error reading settings file", log.output[0])
+
+    def test_update_existing_key(self):
+        manager = SettingsManager()
+        manager.settings = {"repo_path": "/old/path"}
+
+        with patch.object(manager, "save_settings") as mock_save:
+            manager.update_setting("repo_path", "/new/path")
+            self.assertEqual(manager.settings["repo_path"], "/new/path")
+            mock_save.assert_called_once()
 
     def test_update_setting_invalid_key(self):
         # Attempt to update a non-existent key
