@@ -150,3 +150,42 @@ class TestClass:
     def test_non_name_target(self):
         result = self.parse_class("class A:\n    [x] = [1]")
         self.assertEqual(result['attributes'], [])  # [x] is a List node, not Name
+
+    def extract_func_node(self, code):
+        tree = ast.parse(code)
+        return next(n for n in tree.body if isinstance(n, ast.FunctionDef))
+
+    def test_return_variable(self):
+        node = self.extract_func_node("def f(): return x")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns a variable of type inferred by its use: x")
+
+    def test_return_function_call(self):
+        node = self.extract_func_node("def f(): return foo()")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns the result of function call: foo")
+
+    def test_return_method_call(self):
+        node = self.extract_func_node("def f(): return obj.method()")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns the result of a method call: method on object obj")
+
+    def test_return_attribute(self):
+        node = self.extract_func_node("def f(): return obj.attr")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns an attribute: obj.attr")
+
+    def test_return_constant(self):
+        node = self.extract_func_node("def f(): return 123")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns a value of type: Constant")
+
+    def test_return_none_explicit(self):
+        node = self.extract_func_node("def f(): return")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns None")
+
+    def test_no_return(self):
+        node = self.extract_func_node("def f(): pass")
+        result = self.parser.return_types(node)
+        self.assertEqual(result, "Returns None")
