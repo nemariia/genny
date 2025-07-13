@@ -162,3 +162,41 @@ class TestCLIUseCases(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
         self.assertIn("Usage", result.stderr)
         self.assertIn("Missing argument 'TEMPLATE_NAME'", result.stderr)
+
+    def test_select_template_success(self):
+        with patch("genny.templater.Templater.list_templates", return_value=["a", "b"]), \
+             patch("genny.cli.typer.prompt", return_value="2"), \
+             patch("genny.settingsmanager.SettingsManager.update_setting") as mock_update, \
+             patch("genny.cli.pyfiglet.figlet_format", return_value="FIGLET"):
+            result = runner.invoke(app, ["select-template"])
+            self.assertEqual(result.exit_code, 0)
+            mock_update.assert_called_once_with("default_template", "b")
+            self.assertIn("Template 'b' selected and saved as default.", result.stdout)
+
+    def test_select_template_invalid_index(self):
+        with patch("genny.templater.Templater.list_templates", return_value=["a", "b"]), \
+             patch("genny.cli.typer.prompt", return_value="5"), \
+             patch("genny.cli.pyfiglet.figlet_format", return_value="FIGLET"):
+            result = runner.invoke(app, ["select-template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Invalid choice", result.stdout)
+
+    def test_select_template_non_numeric_input(self):
+        with patch("genny.templater.Templater.list_templates", return_value=["a", "b"]), \
+             patch("genny.cli.typer.prompt", return_value="abc"), \
+             patch("genny.cli.pyfiglet.figlet_format", return_value="FIGLET"):
+            result = runner.invoke(app, ["select-template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Invalid input. Please enter a number", result.stdout)
+
+    def test_select_template_no_templates(self):
+        with patch("genny.templater.Templater.list_templates", return_value=[]):
+            result = runner.invoke(app, ["select-template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("No templates available.", result.stdout)
+
+    def test_select_template_unexpected_exception(self):
+        with patch("genny.templater.Templater.list_templates", side_effect=RuntimeError("failure")):
+            result = runner.invoke(app, ["select-template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("An error occurred: failure", result.stdout)
