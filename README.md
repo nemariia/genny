@@ -1,5 +1,6 @@
 # Genny – Code Documentation Generator
 
+[![License](https://img.shields.io/github/license/nemariia/genny)](https://github.com/nemariia/genny/blob/main/LICENSE)
 [![codecov](https://codecov.io/github/nemariia/genny/graph/badge.svg?token=UZTPFNJLGW)](https://codecov.io/github/nemariia/genny)
 
 **Genny** is a Python-based tool that automatically generates documentation from your source code using customizable templates. It supports multiple output formats such as Markdown, HTML, YAML, and JSON.
