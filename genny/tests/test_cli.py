@@ -130,3 +130,35 @@ class TestCLIUseCases(unittest.TestCase):
         result = runner.invoke(app, ["delete-template"])
         self.assertNotEqual(result.exit_code, 0)
         self.assertIn("Missing argument 'TEMPLATE'", result.stderr)
+
+    def test_add_template_success(self):
+        with patch("genny.cli.typer.prompt", side_effect=[
+            "classes,functions",  # sections input
+            "detailed",           # style for 'classes'
+            "summary"             # style for 'functions'
+        ]), patch("genny.templater.Templater.add_template", return_value=True):
+            result = runner.invoke(app, ["add-template", "new_template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Template 'new_template' added successfully!", result.stdout)
+
+    def test_add_template_value_error(self):
+        with patch("genny.cli.typer.prompt", side_effect=[
+            "classes", "detailed"
+        ]), patch("genny.templater.Templater.add_template", side_effect=ValueError("already exists")):
+            result = runner.invoke(app, ["add-template", "existing_template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Error: already exists", result.stdout)
+
+    def test_add_template_unexpected_error(self):
+        with patch("genny.cli.typer.prompt", side_effect=[
+            "functions", "summary"
+        ]), patch("genny.templater.Templater.add_template", side_effect=RuntimeError("crash")):
+            result = runner.invoke(app, ["add-template", "bad_template"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("An unexpected error occurred: crash", result.stdout)
+
+    def test_add_template_missing_argument(self):
+        result = runner.invoke(app, ["add-template"])
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("Usage", result.stderr)
+        self.assertIn("Missing argument 'TEMPLATE_NAME'", result.stderr)
