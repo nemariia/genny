@@ -200,3 +200,65 @@ class TestCLIUseCases(unittest.TestCase):
             result = runner.invoke(app, ["select-template"])
             self.assertEqual(result.exit_code, 0)
             self.assertIn("An error occurred: failure", result.stdout)
+
+    def test_add_repo_with_argument(self):
+        with patch("genny.cli.VersionControl") as mock_vc, \
+             patch("genny.cli.settings_manager.update_setting") as mock_update:
+            result = runner.invoke(app, ["add-repo", "--repo", "my/repo"])
+            self.assertEqual(result.exit_code, 0)
+            mock_vc.assert_called_once_with("my/repo")
+            mock_update.assert_called_once_with("repo_path", "my/repo")
+            self.assertIn("Repository initialized at: my/repo", result.stdout)
+
+    def test_add_repo_from_settings(self):
+        with patch("genny.cli.settings_manager.settings", {"repo_path": "from/settings"}), \
+             patch("genny.cli.VersionControl") as mock_vc, \
+             patch("genny.cli.settings_manager.update_setting") as mock_update:
+            result = runner.invoke(app, ["add-repo"])
+            self.assertEqual(result.exit_code, 0)
+            mock_vc.assert_called_once_with("from/settings")
+            mock_update.assert_called_once_with("repo_path", "from/settings")
+            self.assertIn("Repository initialized at: from/settings", result.stdout)
+
+    def test_add_repo_no_input_or_setting(self):
+        with patch("genny.cli.settings_manager.settings", {}):
+            result = runner.invoke(app, ["add-repo"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Repository path not provided and no default set", result.stdout)
+
+    def test_commit_history_with_commits(self):
+        with patch("genny.cli.settings_manager.settings", {"repo_path": "some/repo"}), \
+             patch("genny.cli.VersionControl") as mock_vc:
+            mock_vc.return_value.get_commit_history.return_value = "commit1\ncommit2"
+            result = runner.invoke(app, ["commit-history"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Commit History:", result.stdout)
+            self.assertIn("commit1", result.stdout)
+            self.assertIn("commit2", result.stdout)
+
+    def test_commit_history_no_commits(self):
+        with patch("genny.cli.settings_manager.settings", {"repo_path": "some/repo"}), \
+             patch("genny.cli.VersionControl") as mock_vc:
+            mock_vc.return_value.get_commit_history.return_value = ""
+            result = runner.invoke(app, ["commit-history"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("No commits found or an error occurred.", result.stdout)
+
+    def test_commit_history_no_repo_path(self):
+        with patch("genny.cli.settings_manager.settings", {}):
+            result = runner.invoke(app, ["commit-history"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Repository path not set", result.stdout)
+
+    def test_checkout_branch_success(self):
+        with patch("genny.cli.settings_manager.settings", {"repo_path": "repo/"}), \
+             patch("genny.cli.VersionControl") as mock_vc:
+            result = runner.invoke(app, ["checkout-branch", "--b", "dev"])
+            self.assertEqual(result.exit_code, 0)
+            mock_vc.return_value.checkout.assert_called_once_with("dev")
+
+    def test_checkout_branch_no_repo_path(self):
+        with patch("genny.cli.settings_manager.settings", {}):
+            result = runner.invoke(app, ["checkout-branch", "--b", "dev"])
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("Repository path not set. Use the 'add_repo' command to set it.", result.stdout)
