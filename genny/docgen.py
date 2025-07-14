@@ -88,12 +88,12 @@ class Docgen():
                                     lines.append(f"  - **Docstring:** {method['docstring']}\n")
                                 if method.get('return_type'):
                                     lines.append(f"  - **Returns:** {method['return_type']}\n")
-                        else:
-                            lines.append("**Parameters:**\n")
-                            lines.append(', '.join(item.get('parameters', [])) + '\n')  # Default empty list for parameters
-                            if item.get('return_type'):
-                                lines.append(f"**Returns:**\n{item['return_type']}\n")
-                            lines.append("\n")
+                    else:
+                        lines.append("**Parameters:**\n")
+                        lines.append(', '.join(item.get('parameters', [])) + '\n')  # Default empty list for parameters
+                        if item.get('return_type'):
+                            lines.append(f"**Returns:**\n{item['return_type']}\n")
+                        lines.append("\n")
 
             else:
                 for item in items:
