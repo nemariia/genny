@@ -161,9 +161,85 @@ def bar():
         # Act
         self.docgen.generate_docs(self.sample_file_path)
 
-        # Assert
         generated_docs = self.docgen.generated_docs
-        print(generated_docs)
         self.assertIn("functions", generated_docs)
         self.assertEqual(generated_docs["functions"], ["foo", "Unnamed"])
         self.assertEqual(generated_docs["title"], "sample_code.py")
+
+    # Markdown tests
+    def test_format_imports(self):
+        docs = {
+            "imports": [[
+                "os",
+                "sys as system"
+            ]]
+        }
+        md = self.docgen.format_markdown(docs)
+        self.assertIn("# Documentation", md)
+        self.assertIn("## Imports", md)
+        self.assertIn("- os", md)
+        self.assertIn("- sys as system", md)
+
+    def test_format_functions(self):
+        docs = {
+            "functions": [
+                {
+                    "name": "my_func",
+                    "docstring": "Does something.",
+                    "parameters": ["x", "y"],
+                    "return_type": "Returns a number"
+                }
+            ]
+        }
+        md = self.docgen.format_markdown(docs)
+        self.assertIn("## Functions", md)
+        self.assertIn("### my_func", md)
+        self.assertIn("**Docstring:**\n> Does something.", md)
+        self.assertIn("**Parameters:**", md)
+        self.assertIn("x, y", md)
+        self.assertIn("**Returns:**\nReturns a number", md)
+
+    def test_format_classes_with_details(self):
+        docs = {
+            "classes": [
+                {
+                    "name": "MyClass",
+                    "docstring": "A sample class.",
+                    "base_classes": ["Base"],
+                    "attributes": [
+                        {"name": "x", "value": "123"},
+                        {"name": "y"}
+                    ],
+                    "methods": [
+                        {
+                            "name": "foo",
+                            "parameters": ["self"],
+                            "docstring": "Does foo.",
+                            "return_type": "Returns None"
+                        }
+                    ]
+                }
+            ]
+        }
+        md = self.docgen.format_markdown(docs)
+        self.assertIn("## Classes", md)
+        self.assertIn("### MyClass", md)
+        self.assertIn("**Docstring:**\n> A sample class.", md)
+        self.assertIn("**Base Classes:**", md)
+        self.assertIn("Base", md)
+        self.assertIn("**Attributes:**", md)
+        self.assertIn("- `x`: 123", md)
+        self.assertIn("- `y`: No description", md)
+        self.assertIn("**Methods:**", md)
+        self.assertIn("- `foo` (self)", md)
+        self.assertIn("  - **Docstring:** Does foo.", md)
+        self.assertIn("  - **Returns:** Returns None", md)
+
+    def test_fallback_section(self):
+        docs = {
+            "misc": ["Item1", "Item2"]
+        }
+        md = self.docgen.format_markdown(docs)
+        self.assertIn("## Misc", md)
+        self.assertIn("- Item1", md)
+        self.assertIn("- Item2", md)
