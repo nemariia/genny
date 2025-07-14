@@ -1,10 +1,11 @@
 import unittest
 import os
 import tempfile
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from genny.docgen import Docgen
 from genny.codeparser import CodeParser
 from genny.filesystem import FileSystem
+import yaml
 
 
 class TestDocgen(unittest.TestCase):
@@ -243,3 +244,41 @@ def bar():
         self.assertIn("## Misc", md)
         self.assertIn("- Item1", md)
         self.assertIn("- Item2", md)
+
+    def test_format_html_returns_rendered_output(self):
+        mock_templater = MagicMock()
+        docs = {"title": "test.py", "functions": [{"name": "foo", "docstring": "test"}]}
+        expected_html = "<html><body>Test</body></html>"
+
+        # Mock the render_template method
+        mock_templater.render_template.return_value = expected_html
+        self.docgen.templater = mock_templater
+        self.docgen.current_template = "test_template"
+
+        # Run format_html
+        result = self.docgen.format_html(docs)
+
+        # Assertions
+        mock_templater.render_template.assert_called_once_with("test_template", docs)
+        self.assertEqual(result, expected_html)
+    
+    def test_format_yaml_output(self):
+        docs = {
+            "title": "test.py",
+            "functions": [
+                {"name": "foo", "docstring": "Does something"}
+            ],
+            "imports": [["os", "sys"]]
+        }
+
+        yaml_output = self.docgen.format_yaml(docs)
+
+        # Re-parse the YAML and compare to the original dict
+        parsed = yaml.safe_load(yaml_output)
+        self.assertEqual(parsed, docs)
+
+        # Check formatting characteristics
+        self.assertIn("title:", yaml_output)
+        self.assertIn("functions:", yaml_output)
+        self.assertNotIn("{", yaml_output)  # ensure block style
+        self.assertNotIn("}", yaml_output)
