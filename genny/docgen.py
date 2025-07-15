@@ -110,7 +110,9 @@ class Docgen():
 
     def export_docs(self, f, destination):
         if f not in ['json', 'markdown', 'html', 'yaml']:
-            raise ValueError(f"Unsupported format: {f}")
+            if self.log_callback:
+                self.log_callback(f"Unsupported format: {f}")
+            return False
 
         if not self.generated_docs:
             if self.log_callback:
@@ -130,9 +132,6 @@ class Docgen():
                     return False
             elif f == 'yaml':
                 formatted_output = self.format_yaml(self.generated_docs)
-            else:
-                raise ValueError(f"Unsupported format: {f}")
-                return False
 
             self.file_system.write_file(destination, formatted_output)
             if self.log_callback:
