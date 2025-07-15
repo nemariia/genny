@@ -79,6 +79,55 @@ def test_function():
         # Read the exported file and verify content
         exported_content = self.file_system.read_file(output_file)
         self.assertIn("test_function", exported_content)
+    
+    def test_export_docs_markdown(self):
+        self.docgen.generated_docs = {"title": "test.py"}
+        self.docgen.file_system.write_file = MagicMock()
+        self.docgen.log_callback = MagicMock()
+
+        result = self.docgen.export_docs("markdown", "output.md")
+
+        self.assertTrue(result)
+        self.docgen.file_system.write_file.assert_called_once()
+        args = self.docgen.file_system.write_file.call_args[0]
+        self.assertEqual(args[0], "output.md")
+        self.assertIn("# Documentation", args[1])
+    
+    def test_export_docs_html_success(self):
+        self.docgen.generated_docs = {"title": "test.py"}
+        self.docgen.file_system.write_file = MagicMock()
+        self.docgen.log_callback = MagicMock()
+        self.docgen.format_html = MagicMock(return_value="<html>ok</html>")
+
+        result = self.docgen.export_docs("html", "output.html")
+
+        self.assertTrue(result)
+        self.assertEqual(self.docgen.format_html.call_count, 2)
+        self.docgen.format_html.assert_called_with({'title': 'test.py'})
+        self.docgen.file_system.write_file.assert_called_once()
+
+    def test_export_docs_html_returns_false_on_none(self):
+        self.docgen.generated_docs = {"title": "test.py"}
+        self.docgen.log_callback = MagicMock()
+        self.docgen.format_html = MagicMock(return_value="")  # Simulate failure
+        self.docgen.file_system.write_file = MagicMock()
+
+        result = self.docgen.export_docs("html", "output.html")
+
+        self.assertFalse(result)
+        self.docgen.file_system.write_file.assert_not_called()
+
+    def test_export_docs_yaml(self):
+        self.docgen.generated_docs = {"title": "test.py"}
+        self.docgen.file_system.write_file = MagicMock()
+        self.docgen.log_callback = MagicMock()
+
+        result = self.docgen.export_docs("yaml", "output.yaml")
+
+        self.assertTrue(result)
+        args = self.docgen.file_system.write_file.call_args[0]
+        self.assertEqual(args[0], "output.yaml")
+        self.assertIn("title: test.py", args[1])
 
     def test_export_docs_with_unsupported_format(self):
         # Write sample Python code to generate docs
@@ -88,15 +137,23 @@ def test_function():
     pass
 """
         self.file_system.write_file(self.sample_file_path, sample_code)
+        self.docgen.log_callback = MagicMock()
 
         # Generate documentation
         self.docgen.generate_docs(self.sample_file_path)
 
-        # Attempt to export in an unsupported format
-        with self.assertRaises(ValueError) as context:
-            self.docgen.export_docs("unsupported", "output.txt")
+        self.docgen.export_docs("unsupported", "output.txt")
 
-        self.assertEqual(str(context.exception), "Unsupported format: unsupported")
+        self.docgen.log_callback.assert_called_with("Unsupported format: unsupported")
+    
+    def test_export_docs_no_generated_docs_returns_false(self):
+        self.docgen.generated_docs = {}
+        self.docgen.log_callback = MagicMock()
+
+        result = self.docgen.export_docs("markdown", "output.md")
+
+        self.assertFalse(result)
+        self.docgen.log_callback.assert_called_once_with("No documentation generated to export.")
 
     @patch("genny.docgen.FileSystem.read_file", return_value="def foo(): pass")
     @patch("genny.docgen.Templater.get_template_metadata", return_value={"sections": [], "style": {}})
@@ -258,7 +315,6 @@ def bar():
         # Run format_html
         result = self.docgen.format_html(docs)
 
-        # Assertions
         mock_templater.render_template.assert_called_once_with("test_template", docs)
         self.assertEqual(result, expected_html)
     
@@ -282,3 +338,14 @@ def bar():
         self.assertIn("functions:", yaml_output)
         self.assertNotIn("{", yaml_output)  # ensure block style
         self.assertNotIn("}", yaml_output)
+
+    def test_export_docs_raises_exception_logs_it(self):
+        self.docgen.generated_docs = {"title": "test.py"}
+        self.docgen.log_callback = MagicMock()
+        self.docgen.file_system.write_file = MagicMock(side_effect=Exception("Simulated write error"))
+
+        result = self.docgen.export_docs("markdown", "output.md")
+
+        self.assertFalse(result)
+        self.docgen.log_callback.assert_called_once()
+        self.assertIn("Error exporting documents: Simulated write error", self.docgen.log_callback.call_args[0][0])
