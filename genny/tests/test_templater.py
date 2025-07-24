@@ -58,21 +58,30 @@ class TestTemplater(unittest.TestCase):
 
     def test_add_template(self):
         """Test adding a new template."""
+        log = MagicMock()
+        templater = Templater(file_system=MagicMock(), log_callback=log)
         mock_template_content = "New Template Content"
         mock_template_style = {"sections": ["functions"], "style": {"functions": "detailed"}}
         template_name = "new_template"
 
         # Simulate non-existent template
-        self.templater.templates_metadata = {}
-        self.templater._save_metadata = MagicMock()
+        templater.templates_metadata = {}
+        templater._save_metadata = MagicMock()
 
         # Call the method
-        result = self.templater.add_template(template_name, ["functions"], {"functions": "detailed"})
+        result = templater.add_template(template_name, ["functions"], {"functions": "detailed"})
 
         # Assertions
         self.assertTrue(result)
-        self.templater._save_metadata.assert_called_once()
-        self.assertIn(template_name, self.templater.templates_metadata)
+        templater._save_metadata.assert_called_once()
+        self.assertIn(template_name, templater.templates_metadata)
+
+        # Adding an existing template
+        result = templater.add_template(template_name, ["functions"], {"functions": "detailed"})
+        self.assertFalse(result)
+        # Assert log was called with proper error
+        log.assert_called_once()
+        self.assertIn(f"Template '{template_name}' already exists.", log.call_args[0][0])
 
     @patch("os.path.exists", return_value=True)
     @patch("os.remove")
@@ -83,7 +92,6 @@ class TestTemplater(unittest.TestCase):
             "existing_template": {"sections": ["functions"], "style": {"functions": "detailed"}}
         }
         self.templater._save_metadata = MagicMock()
-
 
         # Call the method
         self.templater.delete_template(template_name)
