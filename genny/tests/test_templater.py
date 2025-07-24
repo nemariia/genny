@@ -222,3 +222,19 @@ class TestTemplater(unittest.TestCase):
         error_msg = log.call_args[0][0]
         self.assertIn("Error saving metadata", error_msg)
         self.assertIn("Unserializable object", error_msg)
+
+    def test_template_exists(self):
+        """Test _template_exists with an existing and nonexisting template."""
+        # Simulate successful return from get_source
+        self.templater.env.loader.get_source = MagicMock(return_value=("template content", "filename", lambda: False))
+
+        result = self.templater._template_exists("existing_template.jinja")
+
+        self.assertTrue(result, "Expected _template_exists to return True when template is found")
+
+        # Simulate env.loader.get_source raising an exception
+        self.templater.env.loader.get_source = MagicMock(side_effect=Exception("Template not found"))
+
+        result = self.templater._template_exists("nonexistent_template.jinja")
+
+        self.assertFalse(result, "Expected _template_exists to return False on exception")
