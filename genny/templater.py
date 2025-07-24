@@ -53,9 +53,12 @@ class Templater:
             - styling: Styling rules for the template.
         """
         if template_name in self.templates_metadata:
-            print(f"Template '{template_name}' already exists.")
+            error_message = f"Template '{template_name}' already exists."
+            print(error_message)
+            if self.log_callback:
+                self.log_callback(error_message)
             return False
-        
+
         self.templates_metadata[template_name] = {"sections": sections, "style": styling}
         self._save_metadata()
         return True
