@@ -238,3 +238,75 @@ class TestTemplater(unittest.TestCase):
         result = self.templater._template_exists("nonexistent_template.jinja")
 
         self.assertFalse(result, "Expected _template_exists to return False on exception")
+
+    @patch("genny.templater.Environment")
+    def test_render_template_success(self, mock_env):
+        mock_template = MagicMock()
+        mock_template.render.return_value = "Rendered Output"
+
+        mock_loader = MagicMock()
+        mock_loader.get_source.return_value = ("source", "filename", lambda: True)
+        mock_env.return_value.get_template.return_value = mock_template
+
+        log = MagicMock()
+        templater = Templater(log_callback=log)
+        templater.env = mock_env.return_value
+        templater._template_exists = MagicMock(return_value=True)
+
+        context = {"title": "Test"}
+        result = templater.render_template("standard", context)
+
+        self.assertEqual(result, "Rendered Output")
+        mock_template.render.assert_called_once_with(context)
+
+    @patch("genny.templater.Environment")
+    def test_render_template_uses_fallback_on_missing(self, mock_env):
+        mock_template = MagicMock()
+        mock_template.render.return_value = "Fallback Output"
+
+        mock_env.return_value.get_template.side_effect = [Exception("not found"), mock_template]
+        log = MagicMock()
+        templater = Templater(log_callback=log)
+        templater.env = mock_env.return_value
+        templater._template_exists = MagicMock(return_value=False)
+
+        context = {"title": "Test"}
+        mock_env.return_value.get_template = MagicMock(return_value=mock_template)
+
+        result = templater.render_template("standard", context)
+
+        self.assertEqual(result, "Fallback Output")
+        mock_template.render.assert_called_once_with(context)
+        self.assertIn("Template 'standard.jinja' not found", log.call_args[0][0])
+
+    @patch("genny.templater.Environment")
+    def test_render_template_raises_on_render_error(self, mock_env):
+        broken_template = MagicMock()
+        broken_template.render.side_effect = Exception("Render fail")
+
+        mock_env.return_value.get_template.return_value = broken_template
+        log = MagicMock()
+        templater = Templater(log_callback=log)
+        templater.env = mock_env.return_value
+        templater._template_exists = MagicMock(return_value=True)
+
+        context = {"title": "Test"}
+        with self.assertRaises(ValueError) as context_manager:
+            templater.render_template("standard", context)
+
+        self.assertIn("Error rendering template 'standard'", str(context_manager.exception))
+        self.assertIn("Render fail", str(context_manager.exception))
+        self.assertIn("Render fail", log.call_args[0][0])
+
+    def test_list_templates_returns_all_template_names(self):
+        self.templater.templates_metadata = {
+            "template1": {"sections": ["functions"], "style": {"functions": "detailed"}},
+            "template2": {"sections": ["classes"], "style": {"classes": "summary"}}
+        }
+
+        result = self.templater.list_templates()
+
+        self.assertIsInstance(result, list)
+        self.assertIn("template1", result)
+        self.assertIn("template2", result)
+        self.assertEqual(len(result), 2)
