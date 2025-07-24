@@ -78,13 +78,14 @@ class Templater:
         return self.templates_metadata[template_name]
 
     def _template_exists(self, template_file):
-
+        """
+        Check if the template file exists
+        """
         try:
             self.env.loader.get_source(self.env, template_file)
             return True
         except Exception:
             return False
-
 
     def render_template(self, template_name, context):
         """
@@ -97,7 +98,7 @@ class Templater:
         Returns:
             - Rendered template as a string.
         """
-        
+
         try:
             # Ensure template_name only includes the base file name, not a path
             template_file = f"{template_name}.jinja"
@@ -106,15 +107,19 @@ class Templater:
             if self._template_exists(template_file):
                 template = self.env.get_template(template_file)
             else:
-                self.log_callback(f"Template '{template_file}' not found. Using fallback template.")
+                error_message = f"Template '{template_file}' not found. Using fallback template."
+                print(error_message)
+                if self.log_callback:
+                    self.log_callback(error_message)
                 template = self.env.get_template("fallback.jinja")
-
-        # Render the template
+            # Render the template
             return template.render(context)
         except Exception as e:
-            self.log_callback(f"Error rendering template '{template_name}': {e}")
-            raise ValueError(f"Error rendering template '{template_name}': {e}")
-            return False
+            error_message = f"Error rendering template '{template_name}': {e}"
+            print(error_message)
+            if self.log_callback:
+                self.log_callback(error_message)
+            raise ValueError(error_message)
 
     def delete_template(self, template_name):
         if template_name in self.templates_metadata:
