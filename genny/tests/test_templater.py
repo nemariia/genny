@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import MagicMock, patch, mock_open
 from genny.templater import Templater
 import json
+import tempfile
+import os
 
 
 class TestTemplater(unittest.TestCase):
@@ -144,3 +146,71 @@ class TestTemplater(unittest.TestCase):
         self.assertEqual(result, {})
         mock_open_fn.assert_called_once_with("corrupt_metadata.json", "r")
         mock_json_load.assert_called_once()
+
+    def test_save_metadata(self):
+        """Test _save_metadata success."""
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            metadata_path = os.path.join(temp_dir, "mock_metadata.json")
+
+            # Recreate the Templater with the test-specific metadata path
+            templater = Templater()
+            templater.metadata_file = metadata_path
+            templater.templates_metadata = {
+                "sample_template": {"sections": ["functions"], "style": {"functions": "detailed"}}
+            }
+
+            # Write the file
+            templater._save_metadata()
+
+            # Confirm the file exists and contains correct JSON
+            assert os.path.exists(metadata_path), "Metadata file was not created"
+            with open(metadata_path, "r") as f:
+                data = json.load(f)
+
+            self.assertEqual(data, templater.templates_metadata)
+
+    @patch("genny.templater.open", new_callable=mock_open)
+    def test_save_metadata_handles_oserror(self, mock_open_fn):
+        """Test _save_metadata os error."""
+        # Allow reading to succeed but writing to fail
+        def open_side_effect(file, mode, *args, **kwargs):
+            if mode == "w":
+                raise OSError("Permission denied")
+            return mock_open(read_data="{}").return_value
+
+        mock_open_fn.side_effect = open_side_effect
+
+        # Create templater instance
+        log = MagicMock()
+        templater = Templater(file_system=MagicMock(), log_callback=log)
+        templater.metadata_file = "mock_metadata.json"
+        templater.templates_metadata = {
+            "template": {"sections": ["functions"], "style": {"functions": "detailed"}}
+        }
+
+        # Act
+        templater._save_metadata()
+
+        # Assert log was called with proper error
+        log.assert_called_once()
+        self.assertIn("Error saving metadata", log.call_args[0][0])
+        self.assertIn("Permission denied", log.call_args[0][0])
+
+    @patch("json.dump", side_effect=TypeError("Unserializable object"))
+    @patch("genny.templater.open", new_callable=mock_open, read_data="{}")
+    def test_save_metadata_handles_json_typeerror(self, mock_open_fn, mock_json_dump):
+        log = MagicMock()
+        templater = Templater(file_system=MagicMock(), log_callback=log)
+        templater.metadata_file = "mock_metadata.json"
+        templater.templates_metadata = {
+            "template": {"sections": ["functions"], "style": {"functions": set(["not", "json", "serializable"])}}
+        }
+
+        templater._save_metadata()
+
+        # Check that error is logged
+        log.assert_called_once()
+        error_msg = log.call_args[0][0]
+        self.assertIn("Error saving metadata", error_msg)
+        self.assertIn("Unserializable object", error_msg)

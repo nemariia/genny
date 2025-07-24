@@ -3,6 +3,7 @@ from genny.filesystem import FileSystem
 import os
 import json
 
+
 class Templater:
     def __init__(self, template_dir="templates", file_system=None, log_callback=None):
         """
@@ -13,7 +14,7 @@ class Templater:
         self.metadata_file = os.path.join(self.base_dir, "templates_metadata.json")
         self.env = Environment(loader=FileSystemLoader(self.base_dir))
         self.templates_metadata = self._load_metadata()
-        self.log_callback=log_callback
+        self.log_callback = log_callback
 
 
     def _load_metadata(self):
@@ -33,8 +34,14 @@ class Templater:
 
     def _save_metadata(self):
         """Save the current metadata to the metadata file."""
-        with open(self.metadata_file, "w") as file:
-            json.dump(self.templates_metadata, file, indent=4)
+        try:
+            with open(self.metadata_file, "w") as file:
+                json.dump(self.templates_metadata, file, indent=4)
+        except (OSError, TypeError) as e:
+            error_message = f"Error saving metadata to {self.metadata_file}: {e}"
+            print(error_message)
+            if self.log_callback:
+                self.log_callback(error_message)
 
     def add_template(self, template_name, sections, styling):
         """
