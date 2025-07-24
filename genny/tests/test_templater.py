@@ -1,6 +1,7 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, mock_open
 from genny.templater import Templater
+import json
 
 
 class TestTemplater(unittest.TestCase):
@@ -71,8 +72,6 @@ class TestTemplater(unittest.TestCase):
         self.templater._save_metadata.assert_called_once()
         self.assertIn(template_name, self.templater.templates_metadata)
 
-
-
     @patch("os.path.exists", return_value=True)
     @patch("os.remove")
     def test_delete_existing_template_with_file(self, mock_remove, mock_exists):
@@ -123,3 +122,25 @@ class TestTemplater(unittest.TestCase):
             self.templater.delete_template(template_name)
 
         self.assertEqual(str(context.exception), f"Template '{template_name}' not found.")
+
+    @patch("builtins.open", side_effect=FileNotFoundError())
+    def test_load_metadata_file_not_found(self, mock_open_fn):
+        """Test _load_metadata returns empty dict if file is missing."""
+        self.templater.metadata_file = "fake_metadata.json"
+
+        result = self.templater._load_metadata()
+
+        self.assertEqual(result, {})
+        mock_open_fn.assert_called_once_with("fake_metadata.json", "r")
+
+    @patch("builtins.open", new_callable=mock_open, read_data="invalid json")
+    @patch("json.load", side_effect=json.JSONDecodeError("Expecting value", doc="", pos=0))
+    def test_load_metadata_json_decode_error(self, mock_json_load, mock_open_fn):
+        """Test _load_metadata returns empty dict if JSON is invalid."""
+        self.templater.metadata_file = "corrupt_metadata.json"
+
+        result = self.templater._load_metadata()
+
+        self.assertEqual(result, {})
+        mock_open_fn.assert_called_once_with("corrupt_metadata.json", "r")
+        mock_json_load.assert_called_once()
